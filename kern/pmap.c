@@ -288,8 +288,17 @@ page_init(void)
 struct PageInfo *
 page_alloc(int alloc_flags)
 {
-	// Fill this function in
-	return 0;
+	if (page_free_list == NULL)
+		return NULL;
+	
+	struct PageInfo *ret_ptr = page_free_list;
+	page_free_list = ret_ptr->pp_link;
+	ret_ptr->pp_link = NULL;
+
+	if (alloc_flags & ALLOC_ZERO)
+		memset(page2kva(ret_ptr), 0, PGSIZE);
+
+	return ret_ptr;
 }
 
 //
@@ -302,6 +311,13 @@ page_free(struct PageInfo *pp)
 	// Fill this function in
 	// Hint: You may want to panic if pp->pp_ref is nonzero or
 	// pp->pp_link is not NULL.
+	if (pp->pp_ref || pp->pp_link)
+	{
+		panic("Error: error occured when free page at address %x\n", page2kva(pp));
+		return;
+	}
+	pp->pp_link = page_free_list;
+	page_free_list = pp;
 }
 
 //

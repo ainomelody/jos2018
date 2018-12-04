@@ -445,13 +445,11 @@ struct PageInfo *
 page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 {
 	pde_t *page_entry = pgdir_walk(pgdir, va, 0);
-	if (page_entry == NULL)
-		return NULL;
-	
+
 	if (pte_store)
 		*pte_store = page_entry;
 	
-	if (!(*page_entry | PTE_P))
+	if (page_entry == NULL || !(*page_entry | PTE_P))
 		return NULL;
 
 	return pa2page(PTE_ADDR(*page_entry));
@@ -475,7 +473,14 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 void
 page_remove(pde_t *pgdir, void *va)
 {
-	// Fill this function in
+	pte_t *page_entry;
+	struct PageInfo *page_info = page_lookup(pgdir, va, &page_entry);
+	if (page_info == NULL)
+		return;
+	
+	tlb_invalidate(pgdir, va);
+	page_decref(page_info);
+	*page_entry = 0;
 }
 
 //

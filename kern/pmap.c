@@ -256,13 +256,13 @@ page_init(void)
 	// free pages!
 
 	//EXTPHYSMEM=1M. At address 1M, kernel start, unused memory can be pointed out by boot_alloc
-	int unused_page = ((uint32_t)boot_alloc(0) - KERNBASE) / PGSIZE;
+	int used_pages_num = ((uint32_t)boot_alloc(0) - KERNBASE) / PGSIZE;
 
 	pages[0].pp_ref = 1;
 	pages[0].pp_link = NULL;
 	size_t i;
 	for (i = 1; i < npages; i++) {
-		if (i >= IOPHYSMEM / PGSIZE && i < unused_page) {
+		if (i >= IOPHYSMEM / PGSIZE && i < used_pages_num) {
 			pages[i].pp_ref = 1;
 			pages[i].pp_link = NULL;
 		} else {
@@ -391,7 +391,11 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 static void
 boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
-	// Fill this function in
+	for (int i = 0; i < size; i += PGSIZE)
+	{
+		pte_t *page_entry = pgdir_walk(pgdir, (const void *)va + i, 1);
+		*page_entry = (pa + i ) | perm | PTE_P;
+	}
 }
 
 //

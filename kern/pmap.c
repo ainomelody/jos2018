@@ -431,10 +431,10 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 		return -E_NO_MEM;
 	
 	tlb_invalidate(pgdir, va);
+	pp->pp_ref++;
 	if (*page_entry & PTE_P)
 		page_remove(pgdir, va);
 	*page_entry = page2pa(pp) | perm | PTE_P;
-	pp->pp_ref++;
 	pp->pp_link = NULL;
 	return 0;
 }

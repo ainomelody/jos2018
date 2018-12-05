@@ -127,7 +127,7 @@ mem_init(void)
 	i386_detect_memory();
 
 	// Remove this line when you're ready to test this function.
-	panic("mem_init: This function is not finished\n");
+	//panic("mem_init: This function is not finished\n");
 
 	//////////////////////////////////////////////////////////////////////
 	// create initial page directory.
@@ -360,12 +360,12 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 	int pde_index = PDX(va);
 	int pte_index = PTX(va);
 	pte_t page_entry = pgdir[pde_index];
-	if (!(page_entry | PTE_P))	//not exist
+	if (!(page_entry & PTE_P))	//not exist
 	{
 		if (!create)
 			return NULL;
 
-		struct PageInfo *new_page = page_alloc(0);
+		struct PageInfo *new_page = page_alloc(1);
 		if (new_page == NULL)
 			return NULL;
 
@@ -374,7 +374,7 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 	}
 
 	pte_t *page_table = (pte_t *)KADDR(PTE_ADDR(pgdir[pde_index]));
-	return page_table + pte_index;
+	return &page_table[pte_index];
 }
 
 //
@@ -426,7 +426,16 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 int
 page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 {
-	// Fill this function in
+	pde_t *page_entry = pgdir_walk(pgdir, va, 1);
+	if (page_entry == NULL)
+		return -E_NO_MEM;
+	
+	tlb_invalidate(pgdir, va);
+	if (*page_entry & PTE_P)
+		page_remove(pgdir, va);
+	*page_entry = page2pa(pp) | perm | PTE_P;
+	pp->pp_ref++;
+	pp->pp_link = NULL;
 	return 0;
 }
 
@@ -449,7 +458,7 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 	if (pte_store)
 		*pte_store = page_entry;
 	
-	if (page_entry == NULL || !(*page_entry | PTE_P))
+	if (page_entry == NULL || !(*page_entry & PTE_P))
 		return NULL;
 
 	return pa2page(PTE_ADDR(*page_entry));

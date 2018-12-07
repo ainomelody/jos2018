@@ -93,15 +93,15 @@
 #define EXTPHYSMEM	0x100000
 
 // Kernel stack.
-#define KSTACKTOP	KERNBASE
+#define KSTACKTOP	KERNBASE			//0xF0000000
 #define KSTKSIZE	(8*PGSIZE)   		// size of a kernel stack
 #define KSTKGAP		(8*PGSIZE)   		// size of a kernel stack guard
 
 // Memory-mapped IO.
-#define MMIOLIM		(KSTACKTOP - PTSIZE)
-#define MMIOBASE	(MMIOLIM - PTSIZE)
+#define MMIOLIM		(KSTACKTOP - PTSIZE)	//KERNBASE-1024PAGES
+#define MMIOBASE	(MMIOLIM - PTSIZE)		//KERNBASE-2048PAGES
 
-#define ULIM		(MMIOBASE)
+#define ULIM		(MMIOBASE)				//KERNBASE-2048PAGES
 
 /*
  * User read-only mappings! Anything below here til UTOP are readonly to user.
@@ -109,11 +109,11 @@
  */
 
 // User read-only virtual page table (see 'uvpt' below)
-#define UVPT		(ULIM - PTSIZE)
+#define UVPT		(ULIM - PTSIZE)			//KERNBASE-3072PAGES
 // Read-only copies of the Page structures
-#define UPAGES		(UVPT - PTSIZE)
+#define UPAGES		(UVPT - PTSIZE)			//KERNBASE-4096PAGES
 // Read-only copies of the global env structures
-#define UENVS		(UPAGES - PTSIZE)
+#define UENVS		(UPAGES - PTSIZE)		//KERNBASE-5120PAGES
 
 /*
  * Top of user VM. User can manipulate VA from UTOP-1 and down!
